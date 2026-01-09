@@ -1,0 +1,70 @@
+[Unit]
+Description=OpenHands REST API Service
+Documentation=https://github.com/adaptnova/OpenHands
+After=network.target openhands-core.service
+
+[Service]
+Type=simple
+WatchdogSec=30
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment=OPENHANDS_ENV=production
+Environment=OPENHANDS_API_HOST=0.0.0.0
+Environment=OPENHANDS_API_PORT=8080
+Environment=OPENHANDS_API_WORKERS=4
+
+# User and Group
+User=openhands
+Group=openhands
+
+# State directories
+StateDirectory=openhands/api
+StateDirectoryMode=0750
+
+# Logs
+LogsDirectory=openhands/logs/api
+LogsDirectoryMode=0755
+
+# Configuration
+ConfigurationDirectory=openhands
+ConfigurationDirectoryMode=0755
+
+# Execution
+ExecStart=/usr/bin/gunicorn \
+    --config /etc/openhands/gunicorn.conf.py \
+    --workers ${OPENHANDS_API_WORKERS:-4} \
+    --bind ${OPENHANDS_API_HOST:-0.0.0.0}:${OPENHANDS_API_PORT:-8080} \
+    --chdir /var/lib/openhands \
+    openhands.api:app
+
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=2048
+MemoryMax=1G
+MemoryHigh=800M
+CPUQuota=150%
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/openhands/api /var/log/openhands/api
+
+# Environment file
+EnvironmentFile=-/etc/openhands/openhands-api.env
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openhands-api
+
+[Install]
+WantedBy=multi-user.target

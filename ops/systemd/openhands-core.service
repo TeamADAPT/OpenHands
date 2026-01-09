@@ -1,0 +1,82 @@
+[Unit]
+Description=OpenHands Core Cognitive Engine
+Documentation=https://github.com/adaptnova/OpenHands
+After=network.target dragonfly.service postgresql.service mongod.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+WatchdogSec=60
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment=OPENHANDS_ENV=production
+Environment=OPENHANDS_DATA_DIR=/var/lib/openhands
+Environment=POSTGRES_HOST=localhost
+Environment=POSTGRES_PORT=18030
+Environment=DRAGONFLY_HOST=localhost
+Environment=DRAGONFLY_PORT=18000
+Environment=MONGODB_HOST=localhost
+Environment=MONGODB_PORT=18070
+
+# User and Group
+User=openhands
+Group=openhands
+
+# State directories
+StateDirectory=openhands
+StateDirectoryMode=0750
+
+# Runtime directory
+RuntimeDirectory=openhands/runtime
+RuntimeDirectoryMode=0755
+
+# Logs
+LogsDirectory=openhands/logs
+LogsDirectoryMode=0755
+
+# Configuration
+ConfigurationDirectory=openhands
+ConfigurationDirectoryMode=0755
+
+# Working directory
+WorkingDirectory=/var/lib/openhands
+
+# Execution
+ExecStart=/usr/bin/python3 -m openhands.core
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=2G
+MemoryHigh=1.5G
+CPUQuota=200%
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/openhands /var/log/openhands /run/openhands
+
+# Environment file
+EnvironmentFile=-/etc/openhands/openhands-core.env
+
+# Start priority
+Before=openhands-tui.service openhands-ws.service
+
+# Health check
+ExecStartPost=/bin/bash -c 'sleep 2 && curl -sf http://localhost:8000/health || exit 1'
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openhands-core
+
+[Install]
+WantedBy=multi-user.target

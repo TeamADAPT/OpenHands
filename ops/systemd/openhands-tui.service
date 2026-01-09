@@ -1,0 +1,63 @@
+[Unit]
+Description=OpenHands Rust TUI Server
+Documentation=https://github.com/adaptnova/OpenHands
+After=network.target openhands-core.service
+
+[Service]
+Type=simple
+WatchdogSec=30
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment=OPENHANDS_ENV=production
+Environment=OPENHANDS_TUI_HOST=0.0.0.0
+Environment=OPENHANDS_TUI_PORT=8765
+Environment=DRAGONFLY_HOST=localhost
+Environment=DRAGONFLY_PORT=18000
+Environment=REDIS_HOST=localhost
+Environment=REDIS_PORT=18010
+
+# User and Group
+User=openhands
+Group=openhands
+
+# State directories
+StateDirectory=openhands/tui
+StateDirectoryMode=0750
+
+# Logs
+LogsDirectory=openhands/logs/tui
+LogsDirectoryMode=0755
+
+# Execution
+ExecStart=/usr/local/bin/openhands-tui-server
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=1024
+MemoryMax=1G
+MemoryHigh=800M
+CPUQuota=100%
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/openhands/tui /var/log/openhands/tui
+
+# Environment file
+EnvironmentFile=-/etc/openhands/openhands-tui.env
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openhands-tui
+
+[Install]
+WantedBy=multi-user.target

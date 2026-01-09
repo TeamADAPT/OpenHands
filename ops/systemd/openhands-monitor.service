@@ -1,0 +1,74 @@
+[Unit]
+Description=OpenHands Health Monitor Service
+Documentation=https://github.com/adaptnova/OpenHands
+After=network.target
+
+[Service]
+Type=simple
+WatchdogSec=30
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment=OPENHANDS_ENV=production
+Environment=OPENHANDS_MONITOR_INTERVAL=10
+Environment=POSTGRES_HOST=localhost
+Environment=POSTGRES_PORT=18030
+Environment=MONGODB_HOST=localhost
+Environment=MONGODB_PORT=18070
+Environment=QDRANT_HOST=localhost
+Environment=QDRANT_PORT=18050
+Environment=DRAGONFLY_HOST=localhost
+Environment=DRAGONFLY_PORT=18000
+Environment=NEO4J_HOST=localhost
+Environment=NEO4J_PORT=18061
+Environment=CLICKHOUSE_HOST=localhost
+Environment=CLICKHOUSE_PORT=18090
+
+# User and Group
+User=openhands
+Group=openhands
+
+# State directories
+StateDirectory=openhands/monitor
+StateDirectoryMode=0750
+
+# Logs
+LogsDirectory=openhands/logs/monitor
+LogsDirectoryMode=0755
+
+# Execution
+ExecStart=/usr/bin/python3 -m openhands.monitor
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=512
+MemoryMax=256M
+MemoryHigh=200M
+CPUQuota=25%
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/openhands/monitor /var/log/openhands/monitor
+
+# Environment file
+EnvironmentFile=-/etc/openhands/openhands-monitor.env
+
+# Alert destinations
+Environment=ALERT_SLACK_WEBHOOK=${SLACK_ALERT_WEBHOOK}
+Environment=ALERT_JIRA_WEBHOOK=${JIRA_ALERT_WEBHOOK}
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openhands-monitor
+
+[Install]
+WantedBy=multi-user.target

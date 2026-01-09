@@ -1,0 +1,64 @@
+[Unit]
+Description=OpenHands DragonflyDB Stream Sync Service
+Documentation=https://github.com/adaptnova/OpenHands
+After=network.target dragonfly.service openhands-core.service
+
+[Service]
+Type=simple
+WatchdogSec=30
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment=OPENHANDS_ENV=production
+Environment=DRAGONFLY_HOST=localhost
+Environment=DRAGONFLY_PORT=18000
+Environment=DRAGONFLY_PASSWORD=dragonfly-password-f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2
+Environment=REDIS_HOST=localhost
+Environment=REDIS_PORT=18010
+Environment=POSTGRES_HOST=localhost
+Environment=POSTGRES_PORT=18030
+
+# User and Group
+User=openhands
+Group=openhands
+
+# State directories
+StateDirectory=openhands/sync
+StateDirectoryMode=0750
+
+# Logs
+LogsDirectory=openhands/logs/sync
+LogsDirectoryMode=0755
+
+# Execution
+ExecStart=/usr/bin/python3 -m openhands.sync.dragonfly_sync
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=1024
+MemoryMax=512M
+MemoryHigh=400M
+CPUQuota=50%
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/openhands/sync /var/log/openhands/sync
+
+# Environment file
+EnvironmentFile=-/etc/openhands/openhands-sync.env
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openhands-sync
+
+[Install]
+WantedBy=multi-user.target
